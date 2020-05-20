@@ -15,8 +15,9 @@ zScoreAnswer = ['long' if x > .1 else 'short' if x < -.7 else 'hold' for x in zS
 fiveDayChangeAnswer = masterDF['percentChangeInFiveDays']
 fiveDayChangeAnswer = ['long' if x > .1 else 'short' if x < -.1 else 'hold' for x in fiveDayChangeAnswer]
 
-masterDF = masterDF.drop(columns=['Date','zScoreOfChangeTmmrw','percentChangeInFiveDays', 'tmmrwChngAsPerc', \
-								  'ticker', 'High', 'Low', 'Open', 'Close', 'Volume'])
+masterDF.drop(columns=['Date','zScoreOfChangeTmmrw','percentChangeInFiveDays', 'tmmrwChngAsPerc', \
+								  'ticker', 'High', 'Low', 'Open', 'Close', 'Volume'], inplace = True)
+print('masterDF filtered for tree:\n', masterDF.head())
 masterList = masterDF.values
 masterTrainList, masterTestList, zScoreTrainList, zScoreTestList, fiveDayChangeTrainList, fiveDayChangeTestList =\
 train_test_split(masterList,zScoreAnswer,fiveDayChangeAnswer,test_size = .25)

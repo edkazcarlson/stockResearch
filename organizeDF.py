@@ -1,50 +1,38 @@
 import os
 import pandas as pd
+import statistics
+import numpy as np
 #from https://www.kaggle.com/borismarjanovic/price-volume-data-for-all-us-stocks-etfs removing all stocks with less than 1 year of data
 filePath = 'price-volume-data-for-all-us-stocks-etfs/Stocks'
 fileList = os.listdir(filePath)
-masterDF = pd.DataFrame({'Date': [],
-						'Open': [],
-						'High': [],
-						'Low': [],
-						'Close': [],
-						'Volume': [],
-						'VolumeZScore': [],
-						'highVsLowPerc': [],
-						'dayPercentChange': [],
-						'ticker': [],
-						'fiveDayAverage': [],
-						'tenDayAverage': [],
-						'fiveDayWeightedAverage': [],
-						'tenDayWeightedAverage': [],
-						'fiveDaySlopeChange': [],
-						'tenDaySlopeChange': [],
-						'fiveVsTenDaySlopeChange': [],
-						'fiveVsTenDayAverage': [],
-						'tmmrwChngAsPerc': [],
-						'zScoreOfChangeTmmrw': [],
-						'percentChangeInFiveDays': []},
-				  index=[])   
+ 
 counter = 0
 for file in fileList:
 	if counter % 50 == 0:
 		print(counter)
 	counter += 1 
-	if counter > 3:
-		break
 	try:
-		df = pd.read_csv(filePath + '/' + file, parse_dates = True, usecols = ['Date','Open','High','Low','Close','Volume'])
+		df = pd.read_csv(filePath + '/' + file, usecols = ['Date','Open','High','Low','Close','Volume'], parse_dates = ['Date'])
 		tickerSymbol = file.split('.us.txt')[0]
 		rowCount = df.shape[0]
 		emptyRow = [0.0] * rowCount
-		df = df.assign(VolumeZScore = emptyRow, highVsLowPerc = emptyRow, dayPercentChange = emptyRow, ticker = [tickerSymbol]* df.shape[0], 
+		df = df.assign(VolumeZScoreTenDay = emptyRow, highVsLowPerc = emptyRow, dayPercentChange = emptyRow, ticker = [tickerSymbol]* df.shape[0], 
 					   fiveDayAverage = emptyRow, tenDayAverage = emptyRow, fiveDayWeightedAverage = emptyRow, tenDayWeightedAverage = emptyRow,
-					   fiveDaySlopeChange = emptyRow, tenDaySlopeChange = emptyRow, fiveVsTenDaySlopeChange = emptyRow,
+					   fiveVSTenDayWeightedAverage = emptyRow, fiveDaySlopeChange = emptyRow, tenDaySlopeChange = emptyRow, fiveVsTenDaySlopeChange = emptyRow,
 					   fiveVsTenDayAverage = emptyRow, tmmrwChngAsPerc = emptyRow, zScoreOfChangeTmmrw = emptyRow, 
 					   percentChangeInFiveDays = emptyRow)
-		stdDevOfVolume = pd.Series.std(df['Volume'])
-		meanOfVolume = pd.Series.mean(df['Volume'])
-		df['VolumeZScore'] = (df['Volume'] - meanOfVolume).div(stdDevOfVolume)
+		volCounter = 0
+		tenDayVolume = []
+		volumeZList = []
+		for label, item in df['Volume'].items():
+			volCounter += 1
+			tenDayVolume.append(item)
+			if volCounter >= 10:
+				volumeZList.append((item - (sum(tenDayVolume)/len(tenDayVolume)))/statistics.stdev(tenDayVolume))
+				tenDayVolume.pop(0)
+			else:
+				volumeZList.append(np.nan)
+		df['VolumeZScoreTenDay'] = volumeZList
 		df['highVsLowPerc'] = ((df['High'] - df['Low']).div(df['Low']))
 		df['dayPercentChange'] = ((df['Close'] - df['Open']).div(df['Open']))
 		df['fiveDayAverage'] = ((df['Close'] + df['Close'].shift(1) + df['Close'].shift(2) + df['Close'].shift(3) + df['Close'].shift(4)).div(5))
@@ -65,9 +53,11 @@ for file in fileList:
 		df['zScoreOfChangeTmmrw'] = (df['tmmrwChngAsPerc'] - meanOfChangePercent).div(stdDevOfChangePercent)
 		df['percentChangeInFiveDays'] = ((df['Close'].shift(-5) - df['Close']).div(df['Close']))
 		df.dropna(inplace = True)
-		print(df.head())
-		masterDF = pd.concat([masterDF, df])
+		df = df[df['Date'] > np.datetime64('2010-01-01')]
+		if counter == 1:
+			df.to_csv('masterDF.csv', index = False)
+		else:
+			df.to_csv('masterDF.csv', mode = 'a', index = False)
 	except:
 		print("error for: ", file)
 print('finished cleaning')
-masterDF.to_csv('masterDF.csv', index=False) 
