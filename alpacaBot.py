@@ -8,9 +8,9 @@ from enum import Enum
 import json
 from datetime import datetime, timedelta
 from pytz import timezone
+import threading
 
-
-class tradingBot:
+class tradingBot(threading.Thread):
 	def __init__(self, api, strategy, accountRatio):
 		self.api = api
 		self.strategy = strategy
@@ -53,16 +53,32 @@ class tradingBot:
 		stockBars = barset[stock]
 		valuesList = []
 		#calculate and append the values needed to valuesList
-		tenDayVolume = [x.c for x in stockBars]
+		tenDayVolume = [x.v for x in stockBars]
 		volumeMean = sum(tenDayVolume)/len(tenDayVolume)
 		VolumeZScoreTenDay = 0
 		if statistics.stdev(tenDayVolume) != 0:
 			VolumeZScoreTenDay = (stockBars[0].v - volumeMean) / statistics.stdev(tenDayVolume)
 		highVsLowPerc = (stockBars[0].h - stockBars[0].l) / stockBars[0].l
-		fiveDayAverage = (stockBars[0].c + stockBars[0].c + stockBars[0].c + stockBars[0].c + stockBars[0].c) / 5
-		tenDayAverage = 
-		valuesList.append(VolumeZScoreTenDay, highVsLowPerc, dayPercentChange, fiveDayAverage, tenDayAverage, fiveDayWeightedAverage, tenDayWeightedAverage, 
-		fiveDaySlopeChange, tenDaySlopeChange, fiveVsTenDaySlopeChange, fiveVsTenDayAverage)
+		dayPercentChange = (stockBars[0].c - stockBars[0].o)/stockBars[0].o
+		
+		fiveDayAverage = (stockBars[0].c + stockBars[1].c + stockBars[2].c + stockBars[3].c + stockBars[4].c) / 5
+		tenDayAverage = sum([x.c for x in stockBars])/10
+		fiveVsTenDayAverage = (fiveDayAverage - tenDayAverage) /tenDayAverage
+		
+		fiveDayWeightedAverage = sum([stockBars[x].c * (5 - x) for x in range(5)])/15
+		tenDayWeightedAverage = sum([stockBars[x].c * (10 - x) for x in range(10)])/5
+		fiveVSTenDayWeightedAverage = (fiveDayWeightedAverage - tenDayWeightedAverage) /tenDayWeightedAverage
+		
+		fiveDaySlopeChange = (stockBars[0].c - stockBars[4].o ) / 5
+		tenDaySlopeChange = (stockBars[0].c - stockBars[9].o ) / 10
+		fiveVsTenDaySlopeChange = fiveDaySlopeChange - fiveDaySlopeChange
+		
+		valuesList.append(VolumeZScoreTenDay)
+		valuesList.append(highVsLowPerc)
+		valuesList.append(dayPercentChange)
+		valuesList.append(fiveVSTenDayWeightedAverage)
+		valuesList.append(fiveVsTenDaySlopeChange)
+		valuesList.append(fiveVsTenDayAverage)
 		return valuesList
 		
 
@@ -125,14 +141,15 @@ class tradingBot:
 				side='buy',
 				type='market',
 				time_in_force='day',
+				order_class = 'bracket',
 				stop_loss=dict(
-					stop_price = toBuy[symbol][1] * stopLossRatio)
+					stop_price = toBuy[symbol][1] * stopLossRatio),
 				take_profit = dict(
-					limit_price = toSell[symbol][1] * takeProftRatio)
+					limit_price = toBuy[symbol][1] * takeProftRatio)
 			)
 
 	#continuously runs	
-	def run():
+	def run(self):
 		api = self.api
 		cycle = 1
 		while True:

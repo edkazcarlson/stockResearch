@@ -24,4 +24,6 @@ if __name__ == "__main__":
 	api = tradeapi.REST(apikey, secretKey, baseURL)
 	zBot = alpacaBot.tradingBot(api, zStrategy, .5)
 	fiveDayBot = alpacaBot.tradingBot(api, fiveDayStrategy, .5)
+	zBot.start()
+	fiveDayBot.start()
 	#run(api)
