@@ -16,16 +16,25 @@ def errorScoreCalculator(forest, attributes, labels):
 	for guessIndex in range(len(predicted)):
 		guess = predicted[guessIndex]
 		actual = labels[guessIndex]
-		if guess == 'hold' and actual != 'hold':
-			errorScore += 1
-		elif guess == 'long' and actual == 'short':
-			errorScore += 10
-		elif guess == 'short' and actual == 'long':
-			errorScore += 10
-		elif actual == 'hold' and guess != 'hold':
-			errorScore += 1
-	print('Error score is : ', errorScore)
+		if guess == 'hold' :
+			if actual == 'hold' or actual == 'long':
+				errorScore += 1
+			else:
+				errorScore += 5
+		elif guess == 'long':
+			if actual == 'short':
+				errorScore += 10
+			if actual == 'hold':
+				errorScore += 5
+		else: #short
+			if actual == 'long':
+				errorScore += 10
+			if actual == 'hold':
+				errorScore += 5
+	print('Error score is : ', errorScore/len(predicted))
 	return errorScore
+
+
 
 masterDF = pd.read_csv('masterDF.csv', parse_dates = True)
 masterDF.replace([np.inf, -np.inf], np.nan)
@@ -51,7 +60,7 @@ hyperParamDict = {'accuracy': 0,
 'min_samples_split': 0,
 'min_impurity_decrease': 0}
 
-min_samples_splitChoices = [10,20,50,100]
+min_samples_splitChoices = [20,50,100, 200]
 min_impurity_decreaseChoices = [0, 0.001, 0.01, 0.05, 0.1, 0.15]
 trainTestBundles = [['zScorePredictor', zScoreTrainList, zScoreTestList, hyperParamDict.copy()],
 ['fiveDayChangePredictor',fiveDayChangeTrainList, fiveDayChangeTestList, hyperParamDict.copy()]]
@@ -61,6 +70,7 @@ for minSplit in min_samples_splitChoices:
 	for minImpurity in min_impurity_decreaseChoices:
 		for bundle in trainTestBundles:
 			errorScoreList = []
+			accuracyList = []
 			for randState in range(5):
 				predictor = RandomForestClassifier(min_samples_split = minSplit, min_impurity_decrease = minImpurity,
 					random_state = randState, n_jobs = 2)
@@ -71,15 +81,18 @@ for minSplit in min_samples_splitChoices:
 				feature = pd.DataFrame(predictor.feature_importances_,
 													index = masterDF.columns,
 													columns=['importance']).sort_values('importance', ascending=False)
-				print(feature.head(10))
+				print(feature.head(5))
 				errorScore = errorScoreCalculator(predictor, masterTestList, zScoreTestList)
 				errorScoreList.append(errorScore)
+				accuracyList.append(predictionAccuracy)
 			errorScore = sum(errorScoreList)/len(errorScoreList)
+			predictionAccuracy = sum(accuracyList)/len(accuracyList)
 			if errorScore < bundle[3]['error_score']:
 				bundle[3]['accuracy'] = predictionAccuracy
 				bundle[3]['error_score'] = errorScore
-				bundle[3]['min_samples_split']
-				bundle[3]['min_impurity_decrease']
+				bundle[3]['min_samples_split'] = minSplit
+				bundle[3]['min_impurity_decrease'] = minImpurity
+print('Final result:')
 print(trainTestBundles)
 print(trainTestBundles[0][3])
 print(trainTestBundles[1][3])

@@ -6,3 +6,6 @@ masterDF.csv
 test.py
 /nyse
 combinedDF.csv
+/catboost_info
+/catPredictors
+/sciKitPredictors
