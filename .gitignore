@@ -2,6 +2,7 @@
 /.ipynb_checkpoints
 /cleanedData
 /config/alpacaKeys.json
+/config/fredKeys.json
 masterDF.csv
 test.py
 /nyse
