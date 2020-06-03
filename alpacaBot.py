@@ -6,7 +6,7 @@ import time
 import pickle
 from enum import Enum
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from pytz import timezone
 import threading
 
@@ -15,6 +15,8 @@ class tradingBot(threading.Thread):
 		self.api = api
 		self.strategy = strategy
 		self.accountRatio = accountRatio
+		self.fredData = []
+		self.fredLastQueryDate = 0
 	
 	class Choice(Enum):
 		LONG = 0
@@ -44,8 +46,34 @@ class tradingBot(threading.Thread):
 				stockBudget = budget * orderDict[stock] / totalAgreement
 				amountToBuy = stockBudget / stockPrice
 				orderDict[stock] = [amountToBuy, stockPrice]
-			
-
+		
+	def getTodaysFredData():
+		if self.fredLastQueryDate == 0 or self.fredLastQueryDate != date.today():
+			self.fredData = []
+			self.fredLastQueryDate = date.today()
+			fredUrlRoot = 'https://api.stlouisfed.org/fred/series/observations?'
+			fredseriesOfInterest = ['DTWEXAFEGS','DPRIME', 'TOTCI', 'UNRATE', 'CONSUMER','BUSLOANS','CCLACBW027SBOG','STLFSI2', 'PRS85006092', 'TCU', 'FPCPITOTLZGUSA', 'BOPGSTB', 'IEABC', 'CPIAUCSL']
+			for series in fredseriesOfInterest:
+				url = urlRoot + 'series_id='+ series + '&api_key='+ apiKey + '&file_type=json&sort_order=desc'
+				resp = requests.get(url)
+				obs = resp.json()['observations']
+				
+				valueLabel = obs[0]['value']
+				lastChangeP = (obs[0]['value'] - obs[1]['value']) / obs[1]['value']
+				fiveTick = statistics.mean([obs[x]['value'] for x in range(5)])
+				tenTick = statistics.mean([obs[x]['value'] for x in range(5)])
+				fiveVsTenTickAverage = (fiveTick - tenTick)/ tenTick
+				average = statistics.mean([obs[x]['value'] for x in range(20)])
+				upperBand = average + statistics.stdev([obs[x]['value'] for x in range(20)]) 
+				lowerBand = average - statistics.stdev([obs[x]['value'] for x in range(20)]) 
+				bPercent = (obs[0]['value'] - lowerBand) / (upperBand - lowerBand)
+				
+				self.fredData.append(valueLabel)
+				self.fredData.append(lastChangeP)
+				self.fredData.append(fiveVsTenTickAverage)
+				self.fredData.append(bPercent)
+				
+		return self.fredData
 
 	#get the data of the stock and generate the values to feed into the strategy forest
 	def getData(stock):
@@ -72,13 +100,19 @@ class tradingBot(threading.Thread):
 		fiveDaySlopeChange = (stockBars[0].c - stockBars[4].o ) / 5
 		tenDaySlopeChange = (stockBars[0].c - stockBars[9].o ) / 10
 		fiveVsTenDaySlopeChange = fiveDaySlopeChange - fiveDaySlopeChange
-		
+
 		valuesList.append(VolumeZScoreTenDay)
 		valuesList.append(highVsLowPerc)
 		valuesList.append(dayPercentChange)
 		valuesList.append(fiveVSTenDayWeightedAverage)
 		valuesList.append(fiveVsTenDaySlopeChange)
 		valuesList.append(fiveVsTenDayAverage)
+		
+		fredData = getTodaysFredData()
+		for x in fredData:
+			valuesList.append(x)
+		
+
 		return valuesList
 		
 
@@ -173,7 +207,7 @@ class tradingBot(threading.Thread):
 						print("Already traded today, waiting for next market day...")
 						cycle = 1
 			else: #still waiting for market open
-				if toBuy == None or toSell == None:
+				if toBuy == None and toSell == None:
 					toBuy, toSell = chooseWhichToTrade()
 				if cycle % 10 == 0:
 					print("Waiting for next market day...")

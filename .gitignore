@@ -3,6 +3,7 @@
 /cleanedData
 /config/alpacaKeys.json
 /config/fredKeys.json
+/config/newsApiKeys.json
 masterDF.csv
 test.py
 /nyse
