@@ -19,7 +19,7 @@ for chunk in chunks:
 	except:
 		chunk.to_csv(destFileName, index = False)
 
-df = pd.read_csv(destFileName, names = ['Date', 'sent'])
+df = pd.read_csv(destFileName, names = ['Date', 'sent'], dtype = {'sent': 'float64'}, parse_dates = ['Date'])
 for date in df['Date'].unique():
 	daySent = df[df['Date'] == date]['sent']
 	dayMean = daySent.mean()
@@ -27,8 +27,17 @@ for date in df['Date'].unique():
 	d = {'Date': [date], 'sent': [dayMean] }
 	toAppend = pd.DataFrame(data = d)
 	df = df.append(toAppend)
-df.sort_values(by =['Date'], inplace = True, ascending = False)
+df.sort_values(by =['Date'], inplace = True, ascending = True)
 df['changeSinceYesterday'] = (df['sent'] - df['sent'].shift(1))
+days = 25
+Std = multiDayAnalysisTools.stdDevLastXDays(df, days,'sent')
+Average = multiDayAnalysisTools.genXDayAverage(df, days, 'sent')
+upperBand = ((Std).multiply(2) + Average)
+lowerBand = ((Std).multiply(-2) + Average)
+bPercent = []
+for close, upper, lower in zip (df['sent'], upperBand, lowerBand):
+	bPercent.append((close - lower)/(upper - lower))
+df['bPercent'] = bPercent	
 
 dateRange = np.arange('2016-01-01', '2020-05-26', dtype='datetime64[D]')
 dateRange = {'Date': dateRange}
