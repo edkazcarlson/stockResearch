@@ -1,4 +1,8 @@
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
+
 stockDataPath = 'stockDataIndicators.csv'
 sentimentPath = 'sentimentIndicators.csv'
 econimicDataPath = 'economicIndicators.csv'
@@ -23,6 +27,10 @@ masterDF = pd.read_csv(stockDataPath, dtype = {'Open': 'float64',
 												'fiveVsTenDayAverage': 'float64',
 												'MACD': 'float64',
 												'bPercent': 'float64',
+												'averageUp' :'float64',
+												'averageDown' :'float64',
+												'totalVolumeOfTheDay': 'int64',
+												'rsi' :'float64',
 												'tmmrwChngAsPerc': 'float64',
 												'zScoreOfChangeTmmrw': 'float64',
 												'percentChangeInFiveDays': 'float64',
@@ -35,4 +43,5 @@ masterDF = pd.merge(masterDF, sentDF, right_on = 'Date', left_on = 'Date')
 masterDF.dropna(inplace = True)
 sentDF = None
 masterDF = pd.merge(masterDF, econimicDF, right_on = 'Date', left_on = 'Date')
-masterDF.to_csv(destPath)
+masterDF.dropna(inplace = True)
+masterDF.to_csv(destPath, index = False)

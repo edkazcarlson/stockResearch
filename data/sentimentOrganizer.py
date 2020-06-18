@@ -28,7 +28,10 @@ for date in df['Date'].unique():
 	toAppend = pd.DataFrame(data = d)
 	df = df.append(toAppend)
 df.sort_values(by =['Date'], inplace = True, ascending = True)
-df['changeSinceYesterday'] = (df['sent'] - df['sent'].shift(1))
+df['sentChangeSinceYesterday'] = (df['sent'] - df['sent'].shift(1))
+df.to_csv(destFileName, index = False)
+
+df = pd.read_csv(destFileName, dtype = {'sent': 'float64', 'sentChangeSinceYesterday': 'float64'}, parse_dates = ['Date'])
 days = 25
 Std = multiDayAnalysisTools.stdDevLastXDays(df, days,'sent')
 Average = multiDayAnalysisTools.genXDayAverage(df, days, 'sent')
@@ -36,8 +39,11 @@ upperBand = ((Std).multiply(2) + Average)
 lowerBand = ((Std).multiply(-2) + Average)
 bPercent = []
 for close, upper, lower in zip (df['sent'], upperBand, lowerBand):
-	bPercent.append((close - lower)/(upper - lower))
-df['bPercent'] = bPercent	
+	if upper - lower != 0:
+		bPercent.append((close - lower)/(upper - lower))
+	else:
+		bPercent.append(10)
+df['bPercentSent'] = bPercent	
 
 dateRange = np.arange('2016-01-01', '2020-05-26', dtype='datetime64[D]')
 dateRange = {'Date': dateRange}

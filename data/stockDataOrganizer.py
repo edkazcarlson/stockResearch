@@ -7,6 +7,9 @@ import requests
 from textblob import TextBlob
 import datetime
 import multiDayAnalysisTools
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 
 pd.options.display.max_columns = None
 
@@ -14,7 +17,7 @@ def bBandFn(closeVal, upperBandVal, lowerBandVal):
 	return 'Over' if closeVal > upperBandVal else 'Under' if closeVal < lowerBandVal else 'Within' 
 
 dfDestFilePath = 'stockDataIndicators.csv'
-filePath = '541298_1054465_bundle_archive/stocks' #using the 1500 stocks with the most data on them
+filePath = '541298_1054465_bundle_archive/stocks' 
 fileList = os.listdir(filePath)
 sectorDataPath = 'nyse/securities.csv'
 sectorDataDF = pd.read_csv(sectorDataPath, usecols = ['ticker','GICS Sector','GICS Sub Industry'])
@@ -33,7 +36,7 @@ for file in fileList:
 		df = df.assign(VolumeZScoreTenDay = emptyRow, highVsLowPerc = emptyRow, dayPercentChange = emptyRow, ticker = [tickerSymbol]* df.shape[0], 
 					   fiveDayAverage = emptyRow, tenDayAverage = emptyRow, fiveDayWeightedAverage = emptyRow, tenDayWeightedAverage = emptyRow,
 					   fiveVSTenDayWeightedAverage = emptyRow, fiveDaySlopeChange = emptyRow, tenDaySlopeChange = emptyRow, fiveVsTenDaySlopeChange = emptyRow,
-					   fiveVsTenDayAverage = emptyRow, MACD = emptyRow, bPercent = emptyRow,
+					   fiveVsTenDayAverage = emptyRow, MACD = emptyRow, bPercent = emptyRow, rsi = emptyRow,
 					   tmmrwChngAsPerc = emptyRow, zScoreOfChangeTmmrw = emptyRow, percentChangeInFiveDays = emptyRow)
 		volCounter = 0
 		tenDayVolume = []
@@ -74,7 +77,15 @@ for file in fileList:
 		bPercent = []
 		for close, upper, lower in zip (df['Close'], upperBand, lowerBand):
 			bPercent.append((close - lower)/(upper - lower))
-		df['bPercent'] = bPercent		
+		df['bPercent'] = bPercent
+		
+		days = 14
+		df['averageUp'] = multiDayAnalysisTools.genXDayAverage(df, days, 'dayPercentChange', modifier = lambda x: x.clip(0,1000)) + .00001
+		df['averageDown'] = multiDayAnalysisTools.genXDayAverage(df, days, 'dayPercentChange', modifier = lambda x: (x.clip(-1000, 0)).abs()) + .00001
+		
+		df['rsi'] = ((df['averageUp'].div(df['averageDown'])).rdiv(-100) + 100)
+
+		
 		df['tmmrwChngAsPerc'] = ((df['Close'].shift(-1) - df['Open'].shift(-1)).div(df['Open'].shift(-1)))
 		stdDevOfChangePercent = pd.Series.std(df['tmmrwChngAsPerc'])
 		meanOfChangePercent = pd.Series.mean(df['tmmrwChngAsPerc'])
@@ -96,12 +107,17 @@ emptyCol = [0.0] * rowCount
 df['thisDayZScore'] = emptyCol
 df['thisDayAveragePercentChange'] = emptyCol
 df['thisDayPercentChangeStdev'] = emptyCol
+df['totalVolumeOfTheDay'] = emptyCol
+for col in df.columns:
+	print(col)
 for date in df['Date'].unique():
 	dateSeries = df[df['Date'] == date]
 	averatePercentChange = dateSeries['dayPercentChange'].mean()
 	percentChangeStdDev = dateSeries['dayPercentChange'].std()
+	totVol = dateSeries['Volume'].sum()
 	df.loc[df['Date'].isin((df[df['Date'] == date]['Date'])), 'thisDayAveragePercentChange'] = averatePercentChange
 	df.loc[df['Date'].isin((df[df['Date'] == date]['Date'])), 'thisDayPercentChangeStdev'] = percentChangeStdDev
-df['thisDayZScore'] = (df['dayPercentChange'] - df['thisDayAveragePercentChange']).div(df['thisDayPercentChangeStdev'])
+	df.loc[df['Date'].isin((df[df['Date'] == date]['Date'])), 'totalVolumeOfTheDay'] = totVol
+df['thisDayZScore'] = (df['thisDayAveragePercentChange'] - df['thisDayAveragePercentChange'].mean()).div(df['thisDayAveragePercentChange'].std())
 df.to_csv(dfDestFilePath, index = False)
 print('finished cleaning')

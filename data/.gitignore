@@ -3,6 +3,7 @@
 /all-the-news-2-1
 /nyse
 /price-volume-data-for-all-us-stocks-etfs
+/quandlData
 economicIndicators.csv
 masterDF.csv
 sentimentIndicators.csv
