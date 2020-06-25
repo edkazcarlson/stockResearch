@@ -19,6 +19,13 @@ def genXDayAverage(df, days, tag, **kwargs):
 		toReturn = toReturn.add(shiftedSeries)
 	return toReturn.div(days)
 
+def sumMultiDays(series, days):
+	toReturn = np.array([0] * series.shape[0])
+	toReturn = pd.Series(toReturn, dtype = 'float64')
+	for x in range(days):
+		toReturn = toReturn.add(series.shift(x))
+	return toReturn
+
 def stdDevLastXDays(df, days,tag):
 	toReturn = []
 	pastXDayList = [np.nan] * days
