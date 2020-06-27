@@ -16,7 +16,8 @@ with open(parentFilePath + '/config/fredKeys.json', 'r') as f:
 	apiKey = data['APIKEY']
 urlRoot = 'https://api.stlouisfed.org/fred/series/observations?'
 seriesOfInterest = ['DTWEXAFEGS','DPRIME', 'TOTCI', 'UNRATE', 'CONSUMER','BUSLOANS','CCLACBW027SBOG','STLFSI2', 'PRS85006092', 'TCU', 'BOPGSTB', 'CPIAUCSL',
-'SFTPINDM114SFRBSF', 'WALCL', 'M1', 'GOLDAMGBD228NLBM', 'PCEC96', 'DGS30', 'DGS2', 'WPU0911', 'DJIA', 'SP500', 'DEXCHUS', 'DEXUSUK', 'NASDAQCOM']
+'SFTPINDM114SFRBSF', 'WALCL', 'M1', 'GOLDAMGBD228NLBM', 'PCEC96', 'DGS30', 'DGS2', 'WPU0911', 'DJIA', 'SP500', 'DEXCHUS', 'DEXUSUK', 'NASDAQCOM', 'WILL5000PR', 'NASDAQ100',
+'DEXSZUS', 'DEXJPUS']
 dateRange = np.arange('2010-01-01', '2020-05-26', dtype='datetime64[D]')
 dateRange = {'Date': dateRange}
 dateDF = pd.DataFrame(data = dateRange)

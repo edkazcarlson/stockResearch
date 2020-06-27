@@ -2,6 +2,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+from datetime import date
 
 stockDataPath = 'stockDataIndicators.csv'
 sentimentPath = 'sentimentIndicators.csv'
@@ -36,12 +37,13 @@ masterDF = pd.read_csv(stockDataPath, dtype = {'Open': 'float64',
 												'percentChangeInFiveDays': 'float64',
 												'thisDayZScore': 'float64',
 												'thisDayAveragePercentChange': 'float64',
-												'thisDayPercentChangeStdev': 'float64'})
-sentDF = pd.read_csv(sentimentPath, dtype = {'sent': 'float64'})
-econimicDF = pd.read_csv(econimicDataPath)
+												'thisDayPercentChangeStdev': 'float64'}, parse_dates = ['Date'])
+sentDF = pd.read_csv(sentimentPath, dtype = {'sent': 'float64'}, parse_dates = ['Date'])
+econimicDF = pd.read_csv(econimicDataPath, parse_dates = ['Date'])
 masterDF = pd.merge(masterDF, sentDF, right_on = 'Date', left_on = 'Date')
 masterDF.dropna(inplace = True)
 sentDF = None
 masterDF = pd.merge(masterDF, econimicDF, right_on = 'Date', left_on = 'Date')
 masterDF.dropna(inplace = True)
+masterDF['dateOfYear'] = masterDF.apply(lambda row: (date(row['Date'].year, row['Date'].month, row['Date'].day) - 	date(row['Date'].year, 1, 1)).days, axis = 1)
 masterDF.to_csv(destPath, index = False)

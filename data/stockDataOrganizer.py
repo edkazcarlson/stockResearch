@@ -81,10 +81,10 @@ for file in fileList:
 		df['bPercent'] = bPercent
 		
 		days = 14
-		df['averageUp'] = multiDayAnalysisTools.genXDayAverage(df, days, 'dayPercentChange', modifier = lambda x: x.clip(0,1000)) + .00001
-		df['averageDown'] = multiDayAnalysisTools.genXDayAverage(df, days, 'dayPercentChange', modifier = lambda x: (x.clip(-1000, 0)).abs()) + .00001
+		averageUp = multiDayAnalysisTools.genXDayAverage(df, days, 'dayPercentChange', modifier = lambda x: x.clip(0,1000)) + .00001
+		averageDown = multiDayAnalysisTools.genXDayAverage(df, days, 'dayPercentChange', modifier = lambda x: (x.clip(-1000, 0)).abs()) + .00001
 		
-		df['rsi'] = ((df['averageUp'].div(df['averageDown'])).rdiv(-100) + 100)
+		df['rsi'] = ((averageUp.div(averageDown)).rdiv(-100) + 100)
 
 		vol =  [abs(df['Close'].shift(x) - df['Close'].shift(1 + x)) for x in range(10)]
 		KAMAvolatility = emptyRow
@@ -145,13 +145,19 @@ for file in fileList:
 		lowestOfPast14  = []
 		last14 = []
 		for x in range(df.shape[0]):
-			last14.append(df['Close'].iloc[x])
+			last14.append(df['High'].iloc[x])
 			if x >= 14:
 				last14.pop(0)
 				highestOfPast14.append(max(last14))
-				lowestOfPast14.append(min(last14))
 			else:
 				highestOfPast14.append(np.nan)
+		last14 = []
+		for x in range(df.shape[0]):
+			last14.append(df['Low'].iloc[x])
+			if x >= 14:
+				last14.pop(0)
+				lowestOfPast14.append(min(last14))
+			else:
 				lowestOfPast14.append(np.nan)
 		highestOfPast14 = pd.Series(highestOfPast14)
 		lowestOfPast14 = pd.Series(lowestOfPast14)
