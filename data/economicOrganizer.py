@@ -54,17 +54,18 @@ fileNames = ['AAII-AAII_SENTIMENT.csv', 'CASS-CFI.csv', 'CASS-CTLI.csv', 'USMISE
 df = pd.read_csv(quandlRoot + fileNames[0], usecols = ['Date','Bull-Bear Spread', 'Neutral'], parse_dates = ['Date'])
 df = dateDF.merge(df, right_on = 'Date', left_on = 'Date', how = 'left')
 seriesDFList.append(df)
-df = pd.read_csv(quandlRoot + fileNames[1], usecols = ['Date','Shipments Index'], parse_dates = ['Date'])
+df = pd.read_csv(quandlRoot + fileNames[1], usecols = ['Date','Shipments Index', 'Expenditures Index'], parse_dates = ['Date'])
 df = dateDF.merge(df, right_on = 'Date', left_on = 'Date', how = 'left')
 seriesDFList.append(df)
 df = pd.read_csv(quandlRoot + fileNames[2], usecols = ['Date','Index'], parse_dates = ['Date'])
 df.columns = ['Date', 'CASS-CTLI-Index']
 df = dateDF.merge(df, right_on = 'Date', left_on = 'Date', how = 'left')
 seriesDFList.append(df)
-df = pd.read_csv(quandlRoot + fileNames[3], usecols = ['Date','Misery Index'], parse_dates = ['Date'])
+df = pd.read_csv(quandlRoot + fileNames[3], usecols = ['Date','Misery Index','Unemployment Rate','Inflation Rate'], parse_dates = ['Date'])
 df = dateDF.merge(df, right_on = 'Date', left_on = 'Date', how = 'left')
 seriesDFList.append(df)
-df = pd.read_csv(quandlRoot + fileNames[4], usecols = ['Date','North America', 'China (Estimated)'], parse_dates = ['Date'])
+df = pd.read_csv(quandlRoot + fileNames[4], 
+usecols = ['Date','North America', 'South America', 'Asia (ex China)', 'China (Estimated)', 'West Europe', 'East & Central Europe', 'Oceania'], parse_dates = ['Date'])
 df = dateDF.merge(df, right_on = 'Date', left_on = 'Date', how = 'left')
 seriesDFList.append(df)
 
