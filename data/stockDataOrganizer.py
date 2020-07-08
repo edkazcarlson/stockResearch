@@ -186,8 +186,6 @@ df['thisDayZScore'] = emptyCol
 df['thisDayAveragePercentChange'] = emptyCol
 df['thisDayPercentChangeStdev'] = emptyCol
 df['totalVolumeOfTheDay'] = emptyCol
-for col in df.columns:
-	print(col)
 for date in df['Date'].unique():
 	dateSeries = df[df['Date'] == date]
 	averatePercentChange = dateSeries['dayPercentChange'].mean()
@@ -197,5 +195,7 @@ for date in df['Date'].unique():
 	df.loc[df['Date'].isin((df[df['Date'] == date]['Date'])), 'thisDayPercentChangeStdev'] = percentChangeStdDev
 	df.loc[df['Date'].isin((df[df['Date'] == date]['Date'])), 'totalVolumeOfTheDay'] = totVol
 df['thisDayZScore'] = (df['thisDayAveragePercentChange'] - df['thisDayAveragePercentChange'].mean()).div(df['thisDayAveragePercentChange'].std())
+df['vsMarketPerformance'] = df['dayPercentChange'] - df['thisDayAveragePercentChange']
+df['tommorowVSMarketPerformance'] = df['dayPercentChange'].shift(-1) - df['thisDayAveragePercentChange'].shift(-1)
 df.to_csv(dfDestFilePath, index = False)
 print('finished cleaning')

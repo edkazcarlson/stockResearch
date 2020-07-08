@@ -8,6 +8,7 @@ stockDataPath = 'stockDataIndicators.csv'
 sentimentPath = 'sentimentIndicators.csv'
 econimicDataPath = 'economicIndicators.csv'
 destPath = 'masterDF.csv'
+smallPath = 'filtered.csv'
 
 masterDF = pd.read_csv(stockDataPath, dtype = {'Open': 'float64', 
 												'High': 'float64',
@@ -47,3 +48,8 @@ masterDF = pd.merge(masterDF, econimicDF, right_on = 'Date', left_on = 'Date')
 masterDF.dropna(inplace = True)
 masterDF['dateOfYear'] = masterDF.apply(lambda row: (date(row['Date'].year, row['Date'].month, row['Date'].day) - 	date(row['Date'].year, 1, 1)).days, axis = 1)
 masterDF.to_csv(destPath, index = False)
+masterDF.drop(columns=['tmmrwChngAsPerc', 'Date', 'thisDayAveragePercentChange', 'thisDayPercentChangeStdev',
+        'fiveDayWeightedAverage', 'tenDayWeightedAverage', 'fiveDaySlopeChange', 'tenDaySlopeChange', 
+        'High', 'Low', 'Open', 'Close', 'Volume', 'fiveDayAverage', 'tenDayAverage', 'tommorowVSMarketPerformance'], inplace = True)
+masterDF.to_csv(smallPath, index = False)
+
