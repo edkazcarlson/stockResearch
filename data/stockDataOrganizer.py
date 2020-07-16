@@ -19,8 +19,8 @@ def bBandFn(closeVal, upperBandVal, lowerBandVal):
 dfDestFilePath = 'stockDataIndicators.csv'
 filePath = '541298_1054465_bundle_archive/stocks' 
 fileList = os.listdir(filePath)
-sectorDataPath = 'nyse/securities.csv'
-sectorDataDF = pd.read_csv(sectorDataPath, usecols = ['ticker','GICS Sector','GICS Sub Industry'])
+sectorDataPath = 'scrapedSectors.csv'
+sectorDataDF = pd.read_csv(sectorDataPath, usecols = ['ticker','sector','industry'])
 counter = 0
 for file in fileList:
 	tickerSymbol = file.split('.csv')[0].upper()
@@ -30,6 +30,7 @@ for file in fileList:
 		df.reset_index(inplace = True)
 		if counter % 25 == 0:
 			print(counter)
+		print(tickerSymbol)
 		counter += 1 			
 		rowCount = df.shape[0]
 		emptyRow = [0.0] * rowCount
@@ -77,7 +78,10 @@ for file in fileList:
 		lowerBand = ((Std).multiply(-2) + Average)
 		bPercent = []
 		for close, upper, lower in zip (df['Close'], upperBand, lowerBand):
-			bPercent.append((close - lower)/(upper - lower))
+			if upper == lower:
+				bPercent.append(0)
+			else:
+				bPercent.append((close - lower)/(upper - lower))
 		df['bPercent'] = bPercent
 		
 		days = 14

@@ -61,11 +61,19 @@ df = pd.read_csv(quandlRoot + fileNames[2], usecols = ['Date','Index'], parse_da
 df.columns = ['Date', 'CASS-CTLI-Index']
 df = dateDF.merge(df, right_on = 'Date', left_on = 'Date', how = 'left')
 seriesDFList.append(df)
-df = pd.read_csv(quandlRoot + fileNames[3], usecols = ['Date','Misery Index','Unemployment Rate','Inflation Rate'], parse_dates = ['Date'])
+df = pd.read_csv(quandlRoot + fileNames[3], usecols = ['Date','Misery Index','Inflation Rate'], parse_dates = ['Date'])
 df = dateDF.merge(df, right_on = 'Date', left_on = 'Date', how = 'left')
 seriesDFList.append(df)
 df = pd.read_csv(quandlRoot + fileNames[4], 
 usecols = ['Date','North America', 'South America', 'Asia (ex China)', 'China (Estimated)', 'West Europe', 'East & Central Europe', 'Oceania'], parse_dates = ['Date'])
+dayTotal = df['North America'] + df['South America'] + df['Asia (ex China)'] + df['China (Estimated)'] + df['West Europe'] + df['East & Central Europe'] + df['Oceania']
+df['North America'] = df['North America']/dayTotal
+df['South America'] = df['South America']/dayTotal
+df['Asia (ex China)'] = df['Asia (ex China)']/dayTotal
+df['China (Estimated)'] = df['China (Estimated)'] /dayTotal
+df['West Europe'] = df['West Europe'] /dayTotal
+df['East & Central Europe'] = df['East & Central Europe'] /dayTotal
+df['Oceania'] = df['Oceania']/dayTotal
 df = dateDF.merge(df, right_on = 'Date', left_on = 'Date', how = 'left')
 seriesDFList.append(df)
 
