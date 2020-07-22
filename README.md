@@ -9,7 +9,7 @@ The daily breakdown of the "budget" for this is determined by the predicted Z sc
 Using https://alpaca.markets/ as the  stock trading API
 
 Data sets used:
-News articles - https://components.one/datasets/all-the-news-2-news-articles-dataset/
+News articles - https://components.one/datasets/all-the-news-2-news-articles-dataset/ https://components.one/datasets/above-the-fold https://components.one/datasets/all-the-news-articles-dataset
 Company Data - https://www.kaggle.com/dgawlik/nyse
 Stock Data - https://www.kaggle.com/jacksoncrow/stock-market-dataset
 

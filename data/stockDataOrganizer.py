@@ -26,7 +26,7 @@ for file in fileList:
 	tickerSymbol = file.split('.csv')[0].upper()
 	if tickerSymbol in sectorDataDF['ticker'].unique(): #if data on this ticker is in the sectorDataDF
 		df = pd.read_csv(filePath + '/' + file, usecols = ['Date','Open','High','Low','Close','Volume'], parse_dates = ['Date'])
-		df = df[df['Date'] > np.datetime64('2016-01-01')]	
+		df = df[df['Date'] > np.datetime64('2013-01-01')]	
 		df.reset_index(inplace = True)
 		if counter % 25 == 0:
 			print(counter)
@@ -170,6 +170,7 @@ for file in fileList:
 		df['tmmrwChngAsPerc'] = ((df['Close'].shift(-1) - df['Open'].shift(-1)).div(df['Open'].shift(-1)))
 		stdDevOfChangePercent = pd.Series.std(df['tmmrwChngAsPerc'])
 		meanOfChangePercent = pd.Series.mean(df['tmmrwChngAsPerc'])
+		df['todayZScore'] = (((df['Close'] - df['Open'])- meanOfChangePercent).div(stdDevOfChangePercent))
 		df['zScoreOfChangeTmmrw'] = (df['tmmrwChngAsPerc'] - meanOfChangePercent).div(stdDevOfChangePercent)
 		df['percentChangeInFiveDays'] = ((df['Close'].shift(-5) - df['Close']).div(df['Close']))
 		df.dropna(inplace = True)
@@ -186,7 +187,7 @@ for file in fileList:
 df = pd.read_csv(dfDestFilePath, parse_dates = ['Date'])
 rowCount = df.shape[0]
 emptyCol = [0.0] * rowCount
-df['thisDayZScore'] = emptyCol
+df['thisDayMarketZScore'] = emptyCol
 df['thisDayAveragePercentChange'] = emptyCol
 df['thisDayPercentChangeStdev'] = emptyCol
 df['totalVolumeOfTheDay'] = emptyCol
@@ -198,7 +199,7 @@ for date in df['Date'].unique():
 	df.loc[df['Date'].isin((df[df['Date'] == date]['Date'])), 'thisDayAveragePercentChange'] = averatePercentChange
 	df.loc[df['Date'].isin((df[df['Date'] == date]['Date'])), 'thisDayPercentChangeStdev'] = percentChangeStdDev
 	df.loc[df['Date'].isin((df[df['Date'] == date]['Date'])), 'totalVolumeOfTheDay'] = totVol
-df['thisDayZScore'] = (df['thisDayAveragePercentChange'] - df['thisDayAveragePercentChange'].mean()).div(df['thisDayAveragePercentChange'].std())
+df['thisDayMarketZScore'] = (df['thisDayAveragePercentChange'] - df['thisDayAveragePercentChange'].mean()).div(df['thisDayAveragePercentChange'].std())
 df['vsMarketPerformance'] = df['dayPercentChange'] - df['thisDayAveragePercentChange']
 df['tommorowVSMarketPerformance'] = df['dayPercentChange'].shift(-1) - df['thisDayAveragePercentChange'].shift(-1)
 df.to_csv(dfDestFilePath, index = False)

@@ -10,3 +10,4 @@ sentimentIndicators.csv
 stockDataIndicators.csv
 filtered.csv
 *.csv
+*.json

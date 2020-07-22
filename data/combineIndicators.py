@@ -42,7 +42,7 @@ def partOne():
 													'thisDayZScore': 'float64',
 													'thisDayAveragePercentChange': 'float64',
 													'thisDayPercentChangeStdev': 'float64'}, parse_dates = ['Date'])
-	masterDF.drop(columns=['tmmrwChngAsPerc', 'thisDayAveragePercentChange', 'thisDayPercentChangeStdev',
+	masterDF.drop(columns=['thisDayAveragePercentChange', 'thisDayPercentChangeStdev',
 			'fiveDayWeightedAverage', 'tenDayWeightedAverage', 'fiveDaySlopeChange', 'tenDaySlopeChange', 
 			'High', 'Low', 'Open', 'Close', 'Volume', 'fiveDayAverage', 'tenDayAverage', 'tommorowVSMarketPerformance'], inplace = True)
 	masterDF.dropna(inplace = True)

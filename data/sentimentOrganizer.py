@@ -3,22 +3,47 @@ from textblob import TextBlob
 import datetime
 import numpy as np
 import multiDayAnalysisTools
+pd.set_option('display.max_columns', None)
+
+def dateCleaner(x):
+	if len(x) > 10 and x[10] == '"':
+		return x[0:10]
+	else :
+		return x
 
 destFileName = 'sentimentIndicators.csv'
-chunks = pd.read_csv('all-the-news-2-1/all-the-news-2-1.csv', usecols = ['date', 'title', 'article'], 
-dtype = {'title':str, 'article':str}, chunksize = 50000, parse_dates = ['date'])
+
+dumpDF = pd.read_csv('allTheNewsDump/longform.csv', usecols = ['date', 'title', 'content'], parse_dates = ['date'])
+dumpDF = dumpDF.dropna(subset = ['date'])
+
+print(dumpDF[dumpDF['date'].str.len() > 10])
+dumpDF['date'] = dumpDF['date'].apply(lambda x: dateCleaner(x))
+dumpDF['date'] = pd.to_datetime(dumpDF['date'])
+dumpDF['date'] = dumpDF['date'].dt.strftime('%y/%m/%d')
+dumpDF['titleSent'] = dumpDF['title'].apply(lambda x: TextBlob(str(x)).sentiment.polarity)
+dumpDF['articleSent'] = dumpDF['content'].apply(lambda x: TextBlob(str(x)).sentiment.polarity)
+dumpDF.drop(columns = ['title', 'content'], inplace = True)
+dumpDF.to_csv(destFileName, index = False)
+
+nyTimes = pd.read_csv('nytimes front page.csv', usecols = ['date', 'title', 'stems'], parse_dates = ['date'])
+nyTimes['titleSent'] = nyTimes['title'].apply(lambda x: TextBlob(str(x)).sentiment.polarity)
+nyTimes['articleSent'] = nyTimes['stems'].apply(lambda x: TextBlob(str(x)).sentiment.polarity)
+nyTimes.drop(columns = ['title', 'stems'], inplace = True)
+nyTimes['date'] = nyTimes['date'].dt.strftime('%m/%d/%Y')
+nyTimes.to_csv(destFileName, mode = 'a', header = False,index = False)
+
+chunks = pd.read_csv('all-the-news-2-1/filteredNews.csv', usecols = ['date', 'title', 'article', 'section'], 
+dtype = {'title':str, 'article':str, 'section':str}, chunksize = 50000, parse_dates = ['date'])
 
 counter = 0
 for chunk in chunks:
 	counter += 1
+	print(chunk['section'].unique())
 	chunk['titleSent'] = chunk['title'].apply(lambda x: TextBlob(str(x)).sentiment.polarity)
 	chunk['articleSent'] = chunk['article'].apply(lambda x: TextBlob(str(x)).sentiment.polarity)
 	chunk.drop(columns = ['title', 'article'], inplace = True)
 	chunk['date'] = chunk['date'].dt.strftime('%m/%d/%Y')
-	try:
-		chunk.to_csv(destFileName, mode = 'a', header = False,index = False)
-	except:
-		chunk.to_csv(destFileName, index = False)
+	chunk.to_csv(destFileName, mode = 'a', header = False,index = False)
 
 df = pd.read_csv(destFileName, names = ['Date', 'titleSent', 'articleSent'], dtype = {'titleSent': 'float64', 'articleSent': 'float64'}, parse_dates = ['Date'])
 for date in df['Date'].unique():
@@ -51,7 +76,7 @@ for x in ['titleSent', 'articleSent']:
 			bPercent.append(10)
 	df[x + 'bPercent'] = bPercent	
 
-dateRange = np.arange('2016-01-01', '2020-05-26', dtype='datetime64[D]')
+dateRange = np.arange('2013-01-01', '2020-05-26', dtype='datetime64[D]')
 dateRange = {'Date': dateRange}
 dateDF = pd.DataFrame(data = dateRange)
 df['Date'] = pd.to_datetime(df['Date'])

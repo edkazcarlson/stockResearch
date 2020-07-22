@@ -11,3 +11,6 @@ combinedDF.csv
 /catboost_info
 /catPredictors
 /sciKitPredictors
+*.csv
+*.json
+*.db
