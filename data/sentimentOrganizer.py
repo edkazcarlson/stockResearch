@@ -3,6 +3,7 @@ from textblob import TextBlob
 import datetime
 import numpy as np
 import multiDayAnalysisTools
+from tqdm import tqdm
 pd.set_option('display.max_columns', None)
 
 def dateCleaner(x):
@@ -13,17 +14,20 @@ def dateCleaner(x):
 
 destFileName = 'sentimentIndicators.csv'
 
-dumpDF = pd.read_csv('allTheNewsDump/longform.csv', usecols = ['date', 'title', 'content'], parse_dates = ['date'])
-dumpDF = dumpDF.dropna(subset = ['date'])
-
-print(dumpDF[dumpDF['date'].str.len() > 10])
-dumpDF['date'] = dumpDF['date'].apply(lambda x: dateCleaner(x))
-dumpDF['date'] = pd.to_datetime(dumpDF['date'])
-dumpDF['date'] = dumpDF['date'].dt.strftime('%y/%m/%d')
-dumpDF['titleSent'] = dumpDF['title'].apply(lambda x: TextBlob(str(x)).sentiment.polarity)
-dumpDF['articleSent'] = dumpDF['content'].apply(lambda x: TextBlob(str(x)).sentiment.polarity)
-dumpDF.drop(columns = ['title', 'content'], inplace = True)
-dumpDF.to_csv(destFileName, index = False)
+dumpDF = pd.read_csv('allTheNewsDump/longform.csv', usecols = ['date', 'title', 'content'],  chunksize = 5000)
+counter = 0
+for chunk in tqdm(dumpDF):
+	chunk = chunk.dropna(subset = ['date'])
+	chunk['date'] = chunk['date'].apply(lambda x: dateCleaner(x))
+	chunk['date'] = pd.to_datetime(chunk['date'])
+	chunk['date'] = chunk['date'].dt.strftime('%y/%m/%d')
+	chunk['titleSent'] = chunk['title'].apply(lambda x: TextBlob(str(x)).sentiment.polarity)
+	chunk['articleSent'] = chunk['content'].apply(lambda x: TextBlob(str(x)).sentiment.polarity)
+	chunk.drop(columns = ['title', 'content'], inplace = True)
+	if counter == 0:
+		chunk.to_csv(destFileName, index = False)
+	else :
+		chunk.to_csv(destFileName, mode = 'a', header = False,index = False)
 
 nyTimes = pd.read_csv('nytimes front page.csv', usecols = ['date', 'title', 'stems'], parse_dates = ['date'])
 nyTimes['titleSent'] = nyTimes['title'].apply(lambda x: TextBlob(str(x)).sentiment.polarity)
@@ -32,21 +36,20 @@ nyTimes.drop(columns = ['title', 'stems'], inplace = True)
 nyTimes['date'] = nyTimes['date'].dt.strftime('%m/%d/%Y')
 nyTimes.to_csv(destFileName, mode = 'a', header = False,index = False)
 
-chunks = pd.read_csv('all-the-news-2-1/filteredNews.csv', usecols = ['date', 'title', 'article', 'section'], 
-dtype = {'title':str, 'article':str, 'section':str}, chunksize = 50000, parse_dates = ['date'])
+chunks = pd.read_csv('all-the-news-2-1/filteredNews.csv', usecols = ['date', 'title', 'article'], 
+dtype = {'title':str, 'article':str}, chunksize = 5000, parse_dates = ['date'])
 
 counter = 0
-for chunk in chunks:
+for chunk in tqdm(chunks):
 	counter += 1
-	print(chunk['section'].unique())
 	chunk['titleSent'] = chunk['title'].apply(lambda x: TextBlob(str(x)).sentiment.polarity)
 	chunk['articleSent'] = chunk['article'].apply(lambda x: TextBlob(str(x)).sentiment.polarity)
 	chunk.drop(columns = ['title', 'article'], inplace = True)
 	chunk['date'] = chunk['date'].dt.strftime('%m/%d/%Y')
 	chunk.to_csv(destFileName, mode = 'a', header = False,index = False)
 
-df = pd.read_csv(destFileName, names = ['Date', 'titleSent', 'articleSent'], dtype = {'titleSent': 'float64', 'articleSent': 'float64'}, parse_dates = ['Date'])
-for date in df['Date'].unique():
+df = pd.read_csv(destFileName, names = ['Date', 'titleSent', 'articleSent'], header = 0, dtype = {'titleSent': 'float64', 'articleSent': 'float64'}, parse_dates = ['Date'])
+for date in tqdm(df['Date'].unique()):
 	dayTitleSent = df[df['Date'] == date]['titleSent']
 	dayTitleMean = dayTitleSent.mean()
 	dayArticleSent = df[df['Date'] == date]['articleSent']
@@ -62,6 +65,14 @@ df.to_csv(destFileName, index = False)
 
 df = pd.read_csv(destFileName, dtype = {'titleSent': 'float64', 'titleSentChangeSinceYesterday': 'float64', 
 'articleSent': 'float64', 'articleSentChangeSinceYesterday': 'float64'}, parse_dates = ['Date'])
+
+dateRange = np.arange('2013-01-01', '2020-05-26', dtype='datetime64[D]')
+dateRange = {'Date': dateRange}
+dateDF = pd.DataFrame(data = dateRange)
+df['Date'] = pd.to_datetime(df['Date'])
+newDF = dateDF.merge(df, right_on = 'Date', left_on = 'Date', how = 'left')
+newDF.fillna(method = 'ffill', inplace = True)
+
 days = 25
 for x in ['titleSent', 'articleSent']:
 	Std = multiDayAnalysisTools.stdDevLastXDays(df, days, x)
@@ -73,13 +84,6 @@ for x in ['titleSent', 'articleSent']:
 		if upper - lower != 0:
 			bPercent.append((close - lower)/(upper - lower))
 		else:
-			bPercent.append(10)
+			bPercent.append(0)
 	df[x + 'bPercent'] = bPercent	
-
-dateRange = np.arange('2013-01-01', '2020-05-26', dtype='datetime64[D]')
-dateRange = {'Date': dateRange}
-dateDF = pd.DataFrame(data = dateRange)
-df['Date'] = pd.to_datetime(df['Date'])
-newDF = dateDF.merge(df, right_on = 'Date', left_on = 'Date', how = 'left')
-newDF.fillna(method = 'ffill', inplace = True)
 newDF.to_csv(destFileName, index = False)

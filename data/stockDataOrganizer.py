@@ -6,9 +6,8 @@ import json
 import requests
 from textblob import TextBlob
 import datetime
-import seaborn as sns
-import matplotlib.pyplot as plt
 import multiDayAnalysisTools
+from tqdm import tqdm
 
 
 pd.options.display.max_columns = None
@@ -21,16 +20,14 @@ filePath = '541298_1054465_bundle_archive/stocks'
 fileList = os.listdir(filePath)
 sectorDataPath = 'scrapedSectors.csv'
 sectorDataDF = pd.read_csv(sectorDataPath, usecols = ['ticker','sector','industry'])
+colToDrop = ['fiveDayAverage', 'tenDayAverage', 'fiveDayWeightedAverage', 'tenDayWeightedAverage', 'High', 'Low', 'Open', 'Close']
 counter = 0
-for file in fileList:
+for file in tqdm(fileList):
 	tickerSymbol = file.split('.csv')[0].upper()
 	if tickerSymbol in sectorDataDF['ticker'].unique(): #if data on this ticker is in the sectorDataDF
-		df = pd.read_csv(filePath + '/' + file, usecols = ['Date','Open','High','Low','Close','Volume'], parse_dates = ['Date'])
+		df = pd.read_csv(filePath + '/' + file, usecols = ['Date','Open','High','Low','Close','Volume'], parse_dates = ['Date']) 
 		df = df[df['Date'] > np.datetime64('2013-01-01')]	
 		df.reset_index(inplace = True)
-		if counter % 25 == 0:
-			print(counter)
-		print(tickerSymbol)
 		counter += 1 			
 		rowCount = df.shape[0]
 		emptyRow = [0.0] * rowCount
@@ -177,6 +174,7 @@ for file in fileList:
 		df.drop(['index'], inplace = True, axis = 1)
 		df = pd.merge(df, sectorDataDF, right_on = 'ticker', left_on = 'ticker', how = 'left')
 		df.dropna(inplace = True)
+		df.drop(columns = colToDrop, inplace = True)
 		if counter == 1:
 			df.to_csv(dfDestFilePath, index = False)
 		else:
@@ -191,7 +189,7 @@ df['thisDayMarketZScore'] = emptyCol
 df['thisDayAveragePercentChange'] = emptyCol
 df['thisDayPercentChangeStdev'] = emptyCol
 df['totalVolumeOfTheDay'] = emptyCol
-for date in df['Date'].unique():
+for date in tqdm(df['Date'].unique()):
 	dateSeries = df[df['Date'] == date]
 	averatePercentChange = dateSeries['dayPercentChange'].mean()
 	percentChangeStdDev = dateSeries['dayPercentChange'].std()
@@ -201,6 +199,6 @@ for date in df['Date'].unique():
 	df.loc[df['Date'].isin((df[df['Date'] == date]['Date'])), 'totalVolumeOfTheDay'] = totVol
 df['thisDayMarketZScore'] = (df['thisDayAveragePercentChange'] - df['thisDayAveragePercentChange'].mean()).div(df['thisDayAveragePercentChange'].std())
 df['vsMarketPerformance'] = df['dayPercentChange'] - df['thisDayAveragePercentChange']
-df['tommorowVSMarketPerformance'] = df['dayPercentChange'].shift(-1) - df['thisDayAveragePercentChange'].shift(-1)
+df.drop(columns = ['Volume'], inplace = True)
 df.to_csv(dfDestFilePath, index = False)
 print('finished cleaning')

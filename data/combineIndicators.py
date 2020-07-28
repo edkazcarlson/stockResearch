@@ -41,10 +41,7 @@ def partOne():
 													'percentChangeInFiveDays': 'float64',
 													'thisDayZScore': 'float64',
 													'thisDayAveragePercentChange': 'float64',
-													'thisDayPercentChangeStdev': 'float64'}, parse_dates = ['Date'])
-	masterDF.drop(columns=['thisDayAveragePercentChange', 'thisDayPercentChangeStdev',
-			'fiveDayWeightedAverage', 'tenDayWeightedAverage', 'fiveDaySlopeChange', 'tenDaySlopeChange', 
-			'High', 'Low', 'Open', 'Close', 'Volume', 'fiveDayAverage', 'tenDayAverage', 'tommorowVSMarketPerformance'], inplace = True)
+													'thisDayPercentChangeStdev': 'float64'}, parse_dates = ['Date'], engine = 'c')
 	masterDF.dropna(inplace = True)
 	sentDF = pd.read_csv(sentimentPath, dtype = {'sent': 'float64', 
 												'titleSent': 'float64', 
