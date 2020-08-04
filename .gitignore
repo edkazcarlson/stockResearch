@@ -14,3 +14,7 @@ combinedDF.csv
 *.csv
 *.json
 *.db
+*.log
+*.tfevents
+*.tsv
+*.tmp
